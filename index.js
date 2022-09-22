@@ -21,11 +21,11 @@ mongoClient.connect().then(() => {
 
 const postPollSchema = joi.object({
   title: joi.string().required(),
-  expireAt: joi.allow(""),
+  expireAt: joi.string().required(),
 });
 
 app.post("/poll", async (req, res) => {
-  const { title, expireAt } = req.body; ////////////////////////
+  const { title, expireAt } = req.body;
 
   const validation = postPollSchema.validate(req.body, { abortEarly: false });
 
@@ -54,9 +54,9 @@ app.get("/poll", async (req, res) => {
     const polls = await db.collection("poll").find().toArray();
 
     const days = Date.now() - 30 * 1000 * 86400;
-    const ehPolls = polls.filter(
+    /*  const ehPolls = polls.filter(
       ({ expireAt }) => [dayjs(expireAt).valueOf() - days] >= 0
-    );
+    ); */
 
     res.status(200).send(polls);
   } catch (error) {
@@ -65,8 +65,9 @@ app.get("/poll", async (req, res) => {
   }
 });
 
-setInterval(async () => {
+/* setInterval(async () => {
   const days = Date.now() - 30 * 86400 * 1000;
+  console.log(days);
 
   try {
     const polls = await db.collection("poll").find().toArray();
@@ -77,18 +78,66 @@ setInterval(async () => {
         }
       });
     }
-    /* const timeExpirated = await db
+
+
+    /////////
+    const timeExpirated = await db
       .collection("poll")
       .find({ expireAt: { $lte: days } })
       .toArray(); 
 
      if (timeExpirated.length > 0) {
       await db.collection("poll").deleteMany({ expireAt: { $lte: days } });
-    } */
+    } 
+
+////
+
   } catch (error) {
     console.error(error);
   }
-}, 5000);
+}, 900 * 1000);
+//1661260981450
+//2592000000  //30 dias */
+
+const postChoiceSchema = joi.object({
+  title: joi.string().required(),
+  pollId: joi.string().required(),
+});
+
+app.post("/choice", async (req, res) => {
+  const { title, pollId } = req.body;
+  const days = Date.now() - 30 * 86400 * 1000;
+
+  try {
+    const validation = postChoiceSchema.validate(req.body, {
+      abortEarly: false,
+    });
+
+    if (validation.error) {
+      const erros = validation.error.details.map((value) => value.message);
+      return res.status(422).send(erros);
+    }
+
+    if ([dayjs(existsPoll.expireAt).valueOf() - days] < 0) {
+      res.sendStatus(403);
+    }
+
+    const existsPoll = await db.collection("choice").find({ pollId }).toArray();
+    const choices = existsPoll.find(({ title }) => title);
+
+    console.log(choices);
+    if (choices) {
+      console.log(choices);
+      return res.sendStatus(404);
+    }
+
+    await db.collection("choice").insertOne({ title, pollId });
+    res.status(201).send(req.body);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
 
 app.listen(5000, () => {
   console.log("listen on 5000");
