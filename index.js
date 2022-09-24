@@ -23,7 +23,7 @@ const postPollSchema = joi.object({
 });
 
 app.post("/poll", async (req, res) => {
-  const { title, expireAt } = req.body;
+  const { expireAt } = req.body;
 
   const validation = postPollSchema.validate(req.body, { abortEarly: false });
 
@@ -51,51 +51,12 @@ app.get("/poll", async (req, res) => {
   try {
     const polls = await db.collection("poll").find().toArray();
 
-    const days = Date.now() - 30 * 1000 * 86400;
-    /*  const ehPolls = polls.filter(
-      ({ expireAt }) => [dayjs(expireAt).valueOf() - days] >= 0
-    ); */
-
     res.status(200).send(polls);
   } catch (error) {
     console.error(error);
     res.sendStatus(500);
   }
 });
-
-/* setInterval(async () => {
-  const days = Date.now() - 30 * 86400 * 1000;
-  console.log(days);
-
-  try {
-    const polls = await db.collection("poll").find().toArray();
-    if (polls.length > 0) {
-      polls.filter(async (value) => {
-        if ([dayjs(value.expireAt).valueOf() - days] < 0) {
-          await db.collection("poll").deleteOne({ expireAt: value.expireAt });
-        }
-      });
-    }
-
-
-    /////////
-    const timeExpirated = await db
-      .collection("poll")
-      .find({ expireAt: { $lte: days } })
-      .toArray(); 
-
-     if (timeExpirated.length > 0) {
-      await db.collection("poll").deleteMany({ expireAt: { $lte: days } });
-    } 
-
-////
-
-  } catch (error) {
-    console.error(error);
-  }
-}, 900 * 1000);
-//1661260981450
-//2592000000  //30 dias */
 
 const postChoiceSchema = joi.object({
   title: joi.string().required(),
@@ -171,14 +132,11 @@ app.get("/poll/:id/choice", async (req, res) => {
 });
 
 app.post("/choice/:id/vote", async (req, res) => {
-  const { id } = req.params; // id do choice escolhido
+  const { id } = req.params;
   const days = Date.now() - 30 * 1000 * 86400;
-
-  console.log(id);
 
   try {
     const choice = await db.collection("choice").findOne({ _id: ObjectId(id) });
-    console.log("choice", choice);
     if (!choice) {
       return res.sendStatus(404);
     }
@@ -187,15 +145,15 @@ app.post("/choice/:id/vote", async (req, res) => {
       .collection("poll")
       .findOne({ _id: ObjectId(choice.pollId) });
     if (!expirePoll) {
-      res.sendStatus(409);
+      return res.sendStatus(409);
     }
     if ([dayjs(expirePoll.expireAt).valueOf() - days] < 0) {
-      res.sendStatus(403);
+      return res.sendStatus(403);
     }
 
-    const verificacao = await db.collection("vote").insertOne({
+    await db.collection("vote").insertOne({
       createdAt: dayjs().format("YYYY-MM-DD HH:mm"),
-      choiceId: id,
+      choiceId: ObjectId(id),
     });
 
     res.sendStatus(201);
@@ -217,10 +175,8 @@ app.get("/poll/:id/result", async (req, res) => {
     const choices = await db
       .collection("choice")
       .find({ pollId: ObjectId(id) })
-      .toArray(); /// prga os ids das choices, vai em votes e pesquisa os votos
+      .toArray();
 
-    /*  const votes = await db.collection("vote").find(t); */
-    console.log(choices);
     let title = "";
     let totalVotes = 0;
     console.log("choices", choices);
