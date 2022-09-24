@@ -212,5 +212,5 @@ app.get("/poll/:id/result", async (req, res) => {
 });
 
 app.listen(process.env.PORT, () => {
-  console.log("listen on 5000");
+  console.log("app running on port " + process.env.PORT);
 });
