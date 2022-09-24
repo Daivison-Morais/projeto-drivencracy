@@ -85,7 +85,7 @@ app.post("/choice", async (req, res) => {
       return res.sendStatus(404);
     }
     if ([dayjs(expirePoll.expireAt).valueOf() - days] < 0) {
-      res.sendStatus(403);
+      return res.sendStatus(403);
     }
 
     const choices = await db
@@ -189,7 +189,6 @@ app.get("/poll/:id/result", async (req, res) => {
 
       if (maxVotes.length > totalVotes) {
         totalVotes = maxVotes.length;
-
         title = choices[i].title;
       }
     }
