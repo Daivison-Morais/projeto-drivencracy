@@ -13,7 +13,7 @@ function convertMilisInDate(milisecunds) {
     ":" +
     d.getMinutes();
 
-  const fomatDate = dayjs(dateNoFormat).format("YYYY-MM-DD HH:mm");
+  const fomatDate = dayjs(dateNoFormat).format("YYYY-MM-DD -HH:mm");
   return fomatDate;
 }
 
