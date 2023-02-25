@@ -1,4 +1,4 @@
 # projeto-drivencracy
-Para rodar, no terminal coloque:
+base url:
 
-node index.js
+https://drivencracy-n6h3.onrender.com/
